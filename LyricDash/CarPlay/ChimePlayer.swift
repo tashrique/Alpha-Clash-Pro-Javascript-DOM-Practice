@@ -68,7 +68,7 @@ final class ChimePlayer {
                 return
             }
             node.volume = Float(volume)
-            node.scheduleBuffer(buffer, at: nil, options: .interrupts)
+            node.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
             node.play()
             duration = Double(buffer.frameLength) / format.sampleRate
         }
