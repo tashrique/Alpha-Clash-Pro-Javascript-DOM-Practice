@@ -1,0 +1,13 @@
+// Fill these in before running `xcodegen generate`.
+
+// Your Apple Developer Team ID (Xcode > Settings > Accounts, or developer.apple.com > Membership).
+DEVELOPMENT_TEAM =
+
+// Must be unique to you, e.g. com.yourname.lyricdash
+BUNDLE_ID_BASE = com.yourname.lyricdash
+
+// App Group shared by the app and the widget extension. Must start with "group."
+APP_GROUP_ID = group.com.yourname.lyricdash
+
+// From developer.spotify.com/dashboard > your app > Settings. (Not a secret: the app uses PKCE.)
+SPOTIFY_CLIENT_ID = paste-your-spotify-client-id
