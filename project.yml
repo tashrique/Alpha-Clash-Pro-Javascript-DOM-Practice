@@ -48,6 +48,8 @@ targets:
         com.apple.security.application-groups: [$(APP_GROUP_ID)]
     dependencies:
       - target: LyricDashWidgets
+    scheme:
+      testTargets: [LyricDashTests]
 
   LyricDashWidgets:
     type: app-extension
@@ -69,3 +71,15 @@ targets:
       path: LyricDashWidgets/LyricDashWidgets.entitlements
       properties:
         com.apple.security.application-groups: [$(APP_GROUP_ID)]
+
+  LyricDashTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: LyricDashTests
+    dependencies:
+      - target: LyricDash
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_BASE).tests
+        GENERATE_INFOPLIST_FILE: YES

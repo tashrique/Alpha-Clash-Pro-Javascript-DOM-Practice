@@ -83,13 +83,13 @@ final class ChimePlayer {
 
     // MARK: Synthesis
 
-    private struct Note {
+    struct Note {
         let freq: Double
         let start: Double
         let decay: Double // seconds to fade to ~0
     }
 
-    private static func synthesize(_ style: Style, format: AVAudioFormat) -> AVAudioPCMBuffer {
+    static func synthesize(_ style: Style, format: AVAudioFormat) -> AVAudioPCMBuffer {
         let notes: [Note]
         var bell = false
         switch style {

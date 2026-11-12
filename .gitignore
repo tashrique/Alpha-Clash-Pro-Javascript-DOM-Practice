@@ -11,3 +11,9 @@ build/
 xcuserdata/
 *.xcworkspace
 .DS_Store
+
+# Secrets / personal config (see .env.example)
+.env
+.env.*
+!.env.example
+Config.local.xcconfig

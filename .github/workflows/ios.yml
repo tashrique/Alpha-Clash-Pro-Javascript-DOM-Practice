@@ -1,0 +1,51 @@
+name: iOS build & tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode
+        run: xcodebuild -version
+
+      - name: Configure (.env with placeholder values) and generate project
+        run: |
+          cat > .env <<'EOF'
+          APPLE_TEAM_ID=
+          BUNDLE_ID=com.example.lyricdash
+          APP_GROUP_ID=group.com.example.lyricdash
+          SPOTIFY_CLIENT_ID=ci-placeholder-client-id
+          EOF
+          ./scripts/setup.sh
+
+      - name: Build for device (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project LyricDash.xcodeproj -scheme LyricDash \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO | tee build.log | grep -E "error:|warning:|BUILD" || true
+          grep -q "BUILD SUCCEEDED" build.log
+
+      - name: Run unit tests on iPhone simulator
+        run: |
+          set -o pipefail
+          SIM_ID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in sorted(d.items(), reverse=True) if 'iOS' in k for x in v if x['name'].startswith('iPhone')))")
+          echo "Simulator: $SIM_ID"
+          xcodebuild test \
+            -project LyricDash.xcodeproj -scheme LyricDash \
+            -destination "id=$SIM_ID" \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO | tee test.log | grep -E "error:|Test Case|Executed|TEST" || true
+          grep -q "TEST SUCCEEDED" test.log
