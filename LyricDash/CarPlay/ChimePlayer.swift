@@ -68,7 +68,7 @@ final class ChimePlayer {
                 return
             }
             node.volume = Float(volume)
-            node.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
+            node.scheduleBuffer(buffer, at: nil, options: .interrupts)
             node.play()
             duration = Double(buffer.frameLength) / format.sampleRate
         }
@@ -89,7 +89,7 @@ final class ChimePlayer {
         let decay: Double // seconds to fade to ~0
     }
 
-    static func synthesize(_ style: Style, format: AVAudioFormat) -> AVAudioPCMBuffer {
+    nonisolated static func synthesize(_ style: Style, format: AVAudioFormat) -> AVAudioPCMBuffer {
         let notes: [Note]
         var bell = false
         switch style {

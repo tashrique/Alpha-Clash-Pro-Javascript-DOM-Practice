@@ -33,6 +33,7 @@ targets:
         CFBundleDisplayName: LyricDash
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIRequiresFullScreen: true
         NSSupportsLiveActivities: true
         UIBackgroundModes: [location, audio]
         NSLocationWhenInUseUsageDescription: "LyricDash uses location only to keep running in the background while you drive, so lyrics keep updating on CarPlay. Your location is never stored or sent anywhere."

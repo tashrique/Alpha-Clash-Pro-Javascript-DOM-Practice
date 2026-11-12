@@ -56,21 +56,56 @@ LRCLIB (synced lyrics, once per song) ──────────► NowPlayi
    apps only work for users on this list. Spotify has been tightening development-mode rules, so
    check the dashboard if sign-in fails.
 
-### 2. Generate the Xcode project
+### 2. Put your keys in `.env`
+
+The only key this app needs is the **Spotify Client ID**. With PKCE sign-in there's no client
+secret, and there's no server. Your Apple Team ID isn't a secret either, but it's personal, so it
+goes in `.env` too.
 
 ```bash
-brew install xcodegen
 git clone <this repo> && cd <repo>
-# Edit Config.xcconfig: DEVELOPMENT_TEAM, BUNDLE_ID_BASE, APP_GROUP_ID, SPOTIFY_CLIENT_ID
-xcodegen generate
+cp .env.example .env        # .env is git-ignored, so it never gets committed
+open -e .env                # fill in the 4 values (each one is explained in the file)
+./scripts/setup.sh          # writes Config.local.xcconfig (git-ignored) + generates the Xcode project
+```
+
+| `.env` key | Where to find it |
+|---|---|
+| `APPLE_TEAM_ID` | developer.apple.com > Account > Membership details > Team ID |
+| `BUNDLE_ID` | Make one up: `com.<yourname>.lyricdash` |
+| `APP_GROUP_ID` | `group.` + your bundle ID |
+| `SPOTIFY_CLIENT_ID` | Spotify dashboard > your app > Settings |
+
+Run `./scripts/setup.sh` again whenever you change `.env`.
+
+### 3. Install it on your iPhone
+
+```bash
 open LyricDash.xcodeproj
 ```
 
-In Xcode, select the **LyricDash** scheme and your iPhone, then press **Run**. With automatic
-signing, Xcode registers the App Group for you. If it complains, open *Signing & Capabilities* on
-both targets and make sure the same App Group is ticked.
+1. Plug in your iPhone (or pair it over Wi-Fi). On the phone, turn on
+   *Settings > Privacy & Security > Developer Mode* and restart when asked.
+2. In Xcode, choose the **LyricDash** scheme, pick your iPhone at the top, and press **Run** (Cmd-R).
+3. With automatic signing, Xcode creates the App ID and App Group for you. If it complains, open
+   *Signing & Capabilities* on both targets, choose your team, and make sure the same App Group is ticked.
 
-### 3. First run on the phone
+The app then stays on your phone like any other app.
+
+#### "Can I get an APK?"
+
+APK files are Android-only. The iPhone version is an **.ipa**, and an iPhone only installs an
+.ipa if it's signed for your device. So there's no file you can just download and tap. Your options:
+
+| Option | Cost | How long the install lasts | Effort |
+|---|---|---|---|
+| **Xcode > Run** (above) | $99/yr developer account | 1 year, then press Run again | Easiest |
+| **TestFlight**: Xcode > Product > Archive > Distribute > TestFlight Internal | $99/yr | 90 days per build; install from the TestFlight app with no cable | Medium |
+| Free Apple ID + Xcode Run | Free | **7 days**, and widgets/App Groups may not work | Annoying |
+
+For a personal app, use **Xcode > Run** once a year. If you'd rather not plug in, use TestFlight.
+
+### 4. First run on the phone
 
 1. Tap **Connect Spotify** and sign in.
 2. Tap **Allow background (location)** twice: first choose **While Using**, then **Always**.
@@ -78,7 +113,7 @@ both targets and make sure the same App Group is ticked.
 4. Play a song on Spotify and tap **Start lyrics**. You should see the line change in the app and
    on the Lock Screen.
 
-### 4. Turn it on in CarPlay
+### 5. Turn it on in CarPlay
 
 - On the iPhone, go to *Settings > General > CarPlay > (your car)*. Make sure **Widgets** (and
   Live Activities, if your iOS version lists it separately) are on.
@@ -86,7 +121,7 @@ both targets and make sure the same App Group is ticked.
   the iPhone.
 - With lyrics running, open the CarPlay **Dashboard** to see Maps and the lyric line side by side.
 
-### 5. Automatic start + connect sound (recommended)
+### 6. Automatic start + connect sound (recommended)
 
 This works even when LyricDash is closed:
 
@@ -102,11 +137,35 @@ Pick the sound in the app: Rise, Glass, Pulse, or **My sound** (any audio file f
 Spotify gets turned down while the chime plays and comes back afterwards. If the app is also
 running, it won't play the chime twice.
 
+## Does CarPlay need any login or approval?
+
+**No.** LyricDash doesn't use Apple's CarPlay app framework, so you don't need a CarPlay entitlement
+or approval from Apple. Nothing to sign into in the car, and nothing to pair besides your usual
+CarPlay connection. iOS 26 shows any app's widgets and Live Activities on CarPlay automatically.
+
+The only sign-ins are one-time, on the phone:
+- **Spotify:** tap *Connect Spotify* once. The app refreshes the token by itself after that.
+- **Permissions:** allow Location (Always) and Live Activities.
+
+**Testing on a Mac without a car:** Xcode > Open Developer Tool > Simulator, run the app on an
+iPhone simulator, then *I/O > External Displays > CarPlay*. Or download the standalone
+**CarPlay Simulator** (in *Additional Tools for Xcode* on developer.apple.com) and connect a real
+iPhone to it over USB.
+
+## Tests
+
+`LyricDashTests` covers LRC parsing, picking the current line, the widget hand-off, the chime
+synthesis, the Spotify PKCE sign-in URL, and a live LRCLIB lookup. GitHub Actions
+(`.github/workflows/ios.yml`) builds the app for iOS and runs the tests on an iPhone simulator on
+every push and pull request. Locally: Cmd-U in Xcode.
+
 ## Project layout
 
 ```
-project.yml                     XcodeGen spec (app + widget extension)
-Config.xcconfig                 Your team ID, bundle ID, App Group, Spotify client ID
+project.yml                     XcodeGen spec (app + widget extension + tests)
+.env.example                    Template for your keys (copy to .env, which is git-ignored)
+scripts/setup.sh                .env -> Config.local.xcconfig -> xcodegen generate
+Config.xcconfig                 Placeholder build settings (your real values come from .env)
 Shared/                         Code compiled into both targets
   LyricActivityAttributes.swift   Live Activity data
   WidgetSnapshot.swift            App Group hand-off to the widget
@@ -120,13 +179,14 @@ LyricDash/                      The iPhone app
 LyricDashWidgets/               Widget extension
   LyricLiveActivity.swift         Dashboard / Lock Screen / Dynamic Island views
   NowPlayingLyricWidget.swift     CarPlay + home screen widget (timeline per line)
+LyricDashTests/                 Unit tests
+.github/workflows/ios.yml       CI: build + test on macOS
 ```
 
 ## Troubleshooting
 
-- **"Connect Spotify" fails with INVALID_CLIENT or a redirect error:** the Client ID in
-  `Config.xcconfig` or the redirect URI in the Spotify dashboard doesn't match. Run `xcodegen generate`
-  again after changing the config.
+- **"Connect Spotify" fails with INVALID_CLIENT or a redirect error:** `SPOTIFY_CLIENT_ID` in `.env`
+  or the redirect URI in the Spotify dashboard is wrong. Fix it, run `./scripts/setup.sh`, then Run again.
 - **Lyrics stop updating after a few minutes in the car:** location permission isn't set to
   **Always**, or Low Power Mode is on.
 - **"No synced lyrics for this song":** LRCLIB only has plain lyrics for that track. You can add
