@@ -1,0 +1,10 @@
+// Shared build settings. Don't put your own values here.
+// Put them in .env, then run ./scripts/setup.sh. That writes Config.local.xcconfig
+// (git-ignored), which overrides these placeholders.
+
+DEVELOPMENT_TEAM =
+BUNDLE_ID_BASE = com.example.lyricdash
+APP_GROUP_ID = group.com.example.lyricdash
+SPOTIFY_CLIENT_ID = paste-your-spotify-client-id
+
+#include? "Config.local.xcconfig"
